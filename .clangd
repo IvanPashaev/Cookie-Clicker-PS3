@@ -1,0 +1,12 @@
+CompileFlags:
+  # Эта директива заставляет clangd использовать команды из compile_commands.json
+  CompilationDatabase: .
+  # Убираем флаги, специфичные для кросс-компилятора PS3,
+  # которые ломают анализ на хосте.
+  Remove:
+    - -mcpu=*
+    - -mhard-float
+    - -mfloat-abi=*
+    - -fmodulo-sched
+    - -ffunction-sections
+    - -fdata-sections

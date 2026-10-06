@@ -1,0 +1,20 @@
+[
+  {
+    "file": "source/main.c",
+    "arguments": [
+      "/usr/local/ps3dev/ppu/bin/ppu-gcc",
+      "-Wall",
+      "-pedantic",
+      "-O3",
+      "-std=gnu99",
+      "-I/usr/local/ps3dev/ppu/include",
+      "-I/usr/local/ps3dev/portlibs/ppu/include",
+      "-c",
+      "source/main.c",
+      "-o",
+      "source/main.o"
+    ],
+    "directory": "/home/Ivan/programming/C-C++/cookie-clicker-ps3",
+    "output": "source/main.o"
+  }
+]
