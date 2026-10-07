@@ -61,6 +61,20 @@ void loadTextuesToVram(void) {
           tiny3d_TextureOffset(small_cookie_texture_rsx_mem);
     }
   }
+
+  if (light_texture.bmp_out && light_texture.width > 0 &&
+      light_texture.height > 0) {
+    u32 light_texture_size =
+        (light_texture.pitch * light_texture.height + 15) & ~15;
+    u32 *light_texture_rsx_mem = (u32 *)tiny3d_AllocTexture(light_texture_size);
+
+    if (light_texture_rsx_mem) {
+      memcpy(light_texture_rsx_mem, light_texture.bmp_out,
+             light_texture.pitch * light_texture.height);
+
+      light_texture_offset = tiny3d_TextureOffset(light_texture_rsx_mem);
+    }
+  }
 }
 
 void drawCookie(void) {
@@ -72,6 +86,37 @@ void drawCookie(void) {
 
   tiny3d_SetTexture(0, cookie_texture_offset, cookie_texture.width,
                     cookie_texture.height, cookie_texture.pitch,
+                    TINY3D_TEX_FORMAT_A8R8G8B8, TEXTURE_LINEAR);
+
+  tiny3d_SetPolygon(TINY3D_QUADS);
+
+  tiny3d_VertexPos(x, y, 0);
+  tiny3d_VertexColor(0xffffffff);   // white color standart
+  tiny3d_VertexTexture(0.0f, 0.0f); // uv: left up
+
+  tiny3d_VertexPos(x + width, y, 0);
+  tiny3d_VertexColor(0xffffffff);
+  tiny3d_VertexTexture(1.0f, 0.0f); // uv: right up
+
+  tiny3d_VertexPos(x + width, y + height, 0);
+  tiny3d_VertexColor(0xffffffff);
+  tiny3d_VertexTexture(1.0f, 1.0f); // uv: right down
+
+  tiny3d_VertexPos(x, y + height, 0);
+  tiny3d_VertexColor(0xffffffff);
+  tiny3d_VertexTexture(0.0f, 1.0f); // uv: left down
+
+  tiny3d_End();
+}
+void drawLight(void) {
+  float x = 15.0f;
+  float y = 180.0f;
+
+  float width = (float)light_texture.width / 1.5;
+  float height = (float)light_texture.height / 1.5;
+
+  tiny3d_SetTexture(0, light_texture_offset, light_texture.width,
+                    light_texture.height, light_texture.pitch,
                     TINY3D_TEX_FORMAT_A8R8G8B8, TEXTURE_LINEAR);
 
   tiny3d_SetPolygon(TINY3D_QUADS);
@@ -241,6 +286,7 @@ int main(void) {
                          TINY3D_BLEND_FUNC_DST_ALPHA_ZERO,
                      TINY3D_BLEND_RGB_FUNC_ADD | TINY3D_BLEND_ALPHA_FUNC_ADD);
     drawBackgroundTiled();
+    // drawLight(); need another texture and coords
     drawCookie();
     drawValue();
     drawFloatCookies();
