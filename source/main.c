@@ -1,3 +1,4 @@
+#include "fonts.h"
 #include "textures_load.h"
 #include "values.h"
 
@@ -19,8 +20,8 @@ void loadTextuesToVram(void) {
       cookie_texture.height > 0) {
     u32 cookie_texture_size =
         (cookie_texture.pitch * cookie_texture.height + 15) & ~15;
-    u32 *cookie_texture_rsx_mem =
-        (u32 *)tiny3d_AllocTexture(cookie_texture_size);
+    u32 *cookie_texture_rsx_mem = (u32 *)tiny3d_AllocTexture(
+        cookie_texture_size); // alloc memory in rsx for texture
 
     if (cookie_texture_rsx_mem) {
       memcpy(cookie_texture_rsx_mem, cookie_texture.bmp_out,
@@ -45,7 +46,7 @@ void loadTextuesToVram(void) {
 
 void drawCookie(void) {
   float x = 15.0f;
-  float y = 100.0f;
+  float y = 180.0f;
 
   float width = (float)cookie_texture.width / 2.5;
   float height = (float)cookie_texture.height / 2.5;
@@ -57,25 +58,21 @@ void drawCookie(void) {
   tiny3d_SetPolygon(TINY3D_QUADS);
 
   tiny3d_VertexPos(x, y, 0);
-  tiny3d_VertexColor(0xffffffff);   // Белый цвет, чтобы не искажать текстуру
-  tiny3d_VertexTexture(0.0f, 0.0f); // UV: левый верх
+  tiny3d_VertexColor(0xffffffff);   // white color standart
+  tiny3d_VertexTexture(0.0f, 0.0f); // uv: left up
 
-  // Вершина 2: Правый Верхний
   tiny3d_VertexPos(x + width, y, 0);
   tiny3d_VertexColor(0xffffffff);
-  tiny3d_VertexTexture(1.0f, 0.0f); // UV: правый верх
+  tiny3d_VertexTexture(1.0f, 0.0f); // uv: right up
 
-  // Вершина 3: Правый Нижний
   tiny3d_VertexPos(x + width, y + height, 0);
   tiny3d_VertexColor(0xffffffff);
-  tiny3d_VertexTexture(1.0f, 1.0f); // UV: правый низ
+  tiny3d_VertexTexture(1.0f, 1.0f); // uv: right down
 
-  // Вершина 4: Левый Нижний
   tiny3d_VertexPos(x, y + height, 0);
   tiny3d_VertexColor(0xffffffff);
-  tiny3d_VertexTexture(0.0f, 1.0f); // UV: левый низ
+  tiny3d_VertexTexture(0.0f, 1.0f); // uv: left down
 
-  // Заканчиваем описание полигона
   tiny3d_End();
 }
 
@@ -95,31 +92,32 @@ void drawBackgroundTiled(void) {
       tiny3d_SetPolygon(TINY3D_QUADS);
 
       tiny3d_VertexPos(x, y, 0);
-      tiny3d_VertexColor(0xffffffff); // Белый цвет, чтобы не искажать текстуру
-      tiny3d_VertexTexture(0.0f, 0.0f); // UV: левый верх
+      tiny3d_VertexColor(0xffffffff);
+      tiny3d_VertexTexture(0.0f, 0.0f);
 
-      // Вершина 2: Правый Верхний
       tiny3d_VertexPos(x + width, y, 0);
       tiny3d_VertexColor(0xffffffff);
-      tiny3d_VertexTexture(1.0f, 0.0f); // UV: правый верх
+      tiny3d_VertexTexture(1.0f, 0.0f);
 
-      // Вершина 3: Правый Нижний
       tiny3d_VertexPos(x + width, y + height, 0);
       tiny3d_VertexColor(0xffffffff);
-      tiny3d_VertexTexture(1.0f, 1.0f); // UV: правый низ
+      tiny3d_VertexTexture(1.0f, 1.0f);
 
-      // Вершина 4: Левый Нижний
       tiny3d_VertexPos(x, y + height, 0);
       tiny3d_VertexColor(0xffffffff);
-      tiny3d_VertexTexture(0.0f, 1.0f); // UV: левый низ
+      tiny3d_VertexTexture(0.0f, 1.0f);
 
-      // Заканчиваем описание полигона
       tiny3d_End();
     }
   }
 }
 
-void drawValue(void) { DrawFormatString(15.0f, 120.0f, "%lld", clicks); }
+void drawValue(void) {
+  SetCurrentFont(0);
+  SetFontSize(18, 32);
+  SetFontColor(0xffffffff, 0x0);
+  DrawFormatString(70.0f, 100.0f, "cookies: %lld", clicks);
+}
 
 int main(void) {
   printf("init tiny3d...\n");
@@ -132,6 +130,7 @@ int main(void) {
   loadTextures();
 
   loadTextuesToVram();
+  loadFonts();
 
   padInfo padinfo;
   padData paddata;
@@ -155,14 +154,20 @@ int main(void) {
                      TINY3D_BLEND_RGB_FUNC_ADD | TINY3D_BLEND_ALPHA_FUNC_ADD);
     drawBackgroundTiled();
     drawCookie();
+    drawValue();
 
     ioPadGetInfo(&padinfo);
-
+    static u16 prev_cross = 0;
     for (int i = 0; i < MAX_PADS; i++) {
       if (padinfo.status[i]) {
         ioPadGetData(i, &paddata);
 
-        if (paddata.BTN_CROSS) {
+        if (paddata.len > 0) {
+          u16 cur_cross = paddata.BTN_CROSS != 0;
+          if (cur_cross && !prev_cross) {
+            clicks++;
+          }
+          prev_cross = cur_cross;
         }
       }
     }

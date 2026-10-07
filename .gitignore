@@ -1,2 +1,4 @@
 *.pkg
 /build/
+*.self
+*.elf
