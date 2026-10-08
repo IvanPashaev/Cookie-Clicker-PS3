@@ -4,8 +4,10 @@
 #include <json-c/json.h>
 #include <stdio.h>
 
+#define PI 3.14
+
 long long cookies = 0;
-double cookies_per_second = 1.0;
+double cookies_per_second = 0.0;
 
 FloatCookie float_cookies[MAX_FLOAT_COOKIES] = {0};
 
@@ -21,7 +23,7 @@ void load_game(unsigned long long *cookies, int *cursors) {
   // parse string to object
   struct json_object *root = json_tokener_parse(buffer);
   if (!root)
-    return; // Ошибка парсинга
+    return; // parsing error
 
   struct json_object *val;
 

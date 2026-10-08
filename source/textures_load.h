@@ -6,7 +6,7 @@ extern pngData bg_texture;
 extern u32 bg_texture_offset;
 extern pngData small_cookie_texture;
 extern u32 small_cookie_texture_offset;
-extern pngData light_texture;
-extern u32 light_texture_offset;
+extern pngData shine_texture;
+extern u32 shine_texture_offset;
 
 int loadTextures(void);

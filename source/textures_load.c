@@ -11,8 +11,8 @@ extern const uint32_t bg_bin_size;
 extern const uint8_t small_cookie_bin[];
 extern const uint32_t small_cookie_bin_size;
 
-extern const uint8_t light_bin[];
-extern const uint32_t light_bin_size;
+extern const uint8_t shine_bin[];
+extern const uint32_t shine_bin_size;
 
 pngData cookie_texture;
 u32 cookie_texture_offset;
@@ -23,8 +23,8 @@ u32 bg_texture_offset;
 pngData small_cookie_texture;
 u32 small_cookie_texture_offset;
 
-pngData light_texture;
-u32 light_texture_offset;
+pngData shine_texture;
+u32 shine_texture_offset;
 
 int loadTextures(void) {
 
@@ -33,6 +33,6 @@ int loadTextures(void) {
     return ret;
   pngLoadFromBuffer(small_cookie_bin, small_cookie_bin_size,
                     &small_cookie_texture);
-  pngLoadFromBuffer(light_bin, light_bin_size, &light_texture);
+  pngLoadFromBuffer(shine_bin, shine_bin_size, &shine_texture);
   return pngLoadFromBuffer(bg_bin, bg_bin_size, &bg_texture);
 }

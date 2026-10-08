@@ -1,6 +1,7 @@
 // peace for our time
 
 #include "fonts.h"
+#include "matrix.h"
 #include "textures_load.h"
 #include "values.h"
 
@@ -15,9 +16,12 @@
 
 #include <assert.h>
 #include <malloc.h>
+#include <math.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+
+float shine_angle = 0.0f;
 
 void loadTextuesToVram(void) {
   if (cookie_texture.bmp_out && cookie_texture.width > 0 &&
@@ -62,17 +66,17 @@ void loadTextuesToVram(void) {
     }
   }
 
-  if (light_texture.bmp_out && light_texture.width > 0 &&
-      light_texture.height > 0) {
-    u32 light_texture_size =
-        (light_texture.pitch * light_texture.height + 15) & ~15;
-    u32 *light_texture_rsx_mem = (u32 *)tiny3d_AllocTexture(light_texture_size);
+  if (shine_texture.bmp_out && shine_texture.width > 0 &&
+      shine_texture.height > 0) {
+    u32 shine_texture_size =
+        (shine_texture.pitch * shine_texture.height + 15) & ~15;
+    u32 *shine_texture_rsx_mem = (u32 *)tiny3d_AllocTexture(shine_texture_size);
 
-    if (light_texture_rsx_mem) {
-      memcpy(light_texture_rsx_mem, light_texture.bmp_out,
-             light_texture.pitch * light_texture.height);
+    if (shine_texture_rsx_mem) {
+      memcpy(shine_texture_rsx_mem, shine_texture.bmp_out,
+             shine_texture.pitch * shine_texture.height);
 
-      light_texture_offset = tiny3d_TextureOffset(light_texture_rsx_mem);
+      shine_texture_offset = tiny3d_TextureOffset(shine_texture_rsx_mem);
     }
   }
 }
@@ -108,34 +112,51 @@ void drawCookie(void) {
 
   tiny3d_End();
 }
-void drawLight(void) {
-  float x = 15.0f;
-  float y = 180.0f;
 
-  float width = (float)light_texture.width / 1.5;
-  float height = (float)light_texture.height / 1.5;
+void drawShine(float angle) {
+  float x = 120.0f;
+  float y = 280.0f;
 
-  tiny3d_SetTexture(0, light_texture_offset, light_texture.width,
-                    light_texture.height, light_texture.pitch,
+  float fullW = (float)shine_texture.width * 2.0f;
+  float fullH = (float)shine_texture.height * 2.0f;
+  float hw = fullW * 0.5f;
+  float hh = fullH * 0.5f;
+
+  float rad = angle;
+  float c = cosf(rad);
+  float s = sinf(rad);
+
+  // local corners, rotated manually
+  float x0 = (-hw * c) - (-hh * s);
+  float y0 = (-hw * s) + (-hh * c);
+  float x1 = (hw * c) - (-hh * s);
+  float y1 = (hw * s) + (-hh * c);
+  float x2 = (hw * c) - (hh * s);
+  float y2 = (hw * s) + (hh * c);
+  float x3 = (-hw * c) - (hh * s);
+  float y3 = (-hw * s) + (hh * c);
+
+  tiny3d_SetTexture(0, shine_texture_offset, shine_texture.width,
+                    shine_texture.height, shine_texture.pitch,
                     TINY3D_TEX_FORMAT_A8R8G8B8, TEXTURE_LINEAR);
 
   tiny3d_SetPolygon(TINY3D_QUADS);
 
-  tiny3d_VertexPos(x, y, 0);
-  tiny3d_VertexColor(0xffffffff);   // white color standart
-  tiny3d_VertexTexture(0.0f, 0.0f); // uv: left up
-
-  tiny3d_VertexPos(x + width, y, 0);
+  tiny3d_VertexPos(x + x0, y + y0, 0.0f);
   tiny3d_VertexColor(0xffffffff);
-  tiny3d_VertexTexture(1.0f, 0.0f); // uv: right up
+  tiny3d_VertexTexture(0.0f, 0.0f);
 
-  tiny3d_VertexPos(x + width, y + height, 0);
+  tiny3d_VertexPos(x + x1, y + y1, 0.0f);
   tiny3d_VertexColor(0xffffffff);
-  tiny3d_VertexTexture(1.0f, 1.0f); // uv: right down
+  tiny3d_VertexTexture(0.99f, 0.0f);
 
-  tiny3d_VertexPos(x, y + height, 0);
+  tiny3d_VertexPos(x + x2, y + y2, 0.0f);
   tiny3d_VertexColor(0xffffffff);
-  tiny3d_VertexTexture(0.0f, 1.0f); // uv: left down
+  tiny3d_VertexTexture(0.99f, 0.99f);
+
+  tiny3d_VertexPos(x + x3, y + y3, 0.0f);
+  tiny3d_VertexColor(0xffffffff);
+  tiny3d_VertexTexture(0.0f, 0.99f);
 
   tiny3d_End();
 }
@@ -250,6 +271,11 @@ int main(void) {
   srand(time(NULL));
   printf("init tiny3d...\n");
   int r = tiny3d_Init(1024 * 1024);
+  tiny3d_UserViewport(1, 0, 0, (float)(Video_Resolution.width / 916.0f),
+                      (float)(Video_Resolution.height / 582.0f),
+                      (float)(Video_Resolution.width / 1920.0f),
+                      (float)(Video_Resolution.height / 1080.0f));
+
   printf("tiny3d_Init ret=%d\n", r);
 
   ioPadInit(7);
@@ -286,7 +312,7 @@ int main(void) {
                          TINY3D_BLEND_FUNC_DST_ALPHA_ZERO,
                      TINY3D_BLEND_RGB_FUNC_ADD | TINY3D_BLEND_ALPHA_FUNC_ADD);
     drawBackgroundTiled();
-    // drawLight(); need another texture and coords
+    drawShine(shine_angle);
     drawCookie();
     drawValue();
     drawFloatCookies();
@@ -311,6 +337,7 @@ int main(void) {
       }
     }
     updateFloatCookies();
+    shine_angle += 0.001f;
     tiny3d_Flip();
   }
 }
