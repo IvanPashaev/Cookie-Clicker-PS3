@@ -9,9 +9,20 @@
 long long cookies = 0;
 double cookies_per_second = 0.0;
 
+float cookie_width = 2.5f;
+float cookie_height = 2.5f;
+
+long long cursors = 0;
+float cursors_price = 15.0f;
+float cursors_base_price = 15.0f;
+
+long long grandmas = 0;
+float grandmas_price = 100.0f;
+float grandmas_base_price = 100.0f;
+
 FloatCookie float_cookies[MAX_FLOAT_COOKIES] = {0};
 
-void load_game(unsigned long long *cookies, int *cursors) {
+void load_game(unsigned long long *cookies, long long *cursors) {
   FILE *fp = fopen("/dev_hdd0/game/COOK13000/USRDIR/save.json", "r");
   if (!fp)
     return;
@@ -32,19 +43,19 @@ void load_game(unsigned long long *cookies, int *cursors) {
     *cookies = json_object_get_int64(val);
   }
   if (json_object_object_get_ex(root, "cursors", &val)) {
-    *cursors = json_object_get_int(val);
+    *cursors = json_object_get_int64(val);
   }
 
   // free memory
   json_object_put(root);
 }
-void save_game(unsigned long long cookies, int cursors) {
+void save_game(unsigned long long cookies, long long cursors) {
   // create root object
   struct json_object *root = json_object_new_object();
 
   // add objects
   json_object_object_add(root, "cookies", json_object_new_int64(cookies));
-  json_object_object_add(root, "cursors", json_object_new_int(cursors));
+  json_object_object_add(root, "cursors", json_object_new_int64(cursors));
 
   // json to string and write to file
   const char *json_str =

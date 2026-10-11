@@ -13,6 +13,7 @@ endif
 TITLE		:=	Cookie Clicker
 APPID		:=	COOK13000
 CONTENTID	:=	UP0001-$(APPID)_00-0000000000000000
+ICON0       :=  param/ICON0.PNG
 
 include $(PSL1GHT)/ppu_rules
 
@@ -36,9 +37,7 @@ INCLUDES	:=	include
 #---------------------------------------------------------------------------------
 # any extra libraries we wish to link with the project
 #---------------------------------------------------------------------------------
-LIBS		:=	-lfont3d -lfreetype -ltiny3d -ljson-c -lz -lsimdmath -lgcm_sys -lio -lsysutil -lrt -llv2 -lpngdec -lsysmodule -lm
-
-
+LIBS := -lfont3d -lfreetype -ltiny3d -ljson-c -lz -lsimdmath -lgcm_sys -lio -lsysutil -laudioplayer -lmpg123 -lrt -llv2 -lpngdec -lsysmodule -lspu_sound -laudio -lvorbis -logg -lm
 #---------------------------------------------------------------------------------
 # options for code generation
 #---------------------------------------------------------------------------------
