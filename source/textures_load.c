@@ -26,6 +26,12 @@ extern const uint32_t grandma_store_bin_size;
 extern const uint8_t gray_bin[];
 extern const uint32_t gray_bin_size;
 
+extern const uint8_t farm_store_bin[];
+extern const uint32_t farm_store_bin_size;
+
+extern const uint8_t mine_store_bin[];
+extern const uint32_t mine_store_bin_size;
+
 pngData cookie_texture;
 u32 cookie_texture_offset;
 
@@ -50,6 +56,12 @@ u32 grandma_store_texture_offset;
 pngData gray_texture;
 u32 gray_texture_offset;
 
+pngData farm_store_texture;
+u32 farm_store_texture_offset;
+
+pngData mine_store_texture;
+u32 mine_store_texture_offset;
+
 int loadTextures(void) {
 
   int ret = pngLoadFromBuffer(cookie_bin, cookie_bin_size, &cookie_texture);
@@ -65,5 +77,7 @@ int loadTextures(void) {
   pngLoadFromBuffer(grandma_store_bin, grandma_store_bin_size,
                     &grandma_store_texture);
   pngLoadFromBuffer(gray_bin, gray_bin_size, &gray_texture);
+  pngLoadFromBuffer(farm_store_bin, farm_store_bin_size, &farm_store_texture);
+  pngLoadFromBuffer(mine_store_bin, mine_store_bin_size, &mine_store_texture);
   return pngLoadFromBuffer(bg_bin, bg_bin_size, &bg_texture);
 }

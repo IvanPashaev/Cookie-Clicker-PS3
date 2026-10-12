@@ -24,12 +24,53 @@
 
 float shine_angle = 0.0f;
 
-#define STORE_THINGS 1
+#define STORE_THINGS 3
 int store_select = 0;
+int save_game_show = 0;
+int save_game_show_frames = 0;
 
-enum store_stats { CURSORS };
-
-enum store_stats STORE_STATS = {CURSORS};
+void format_big(double value, char *buf) {
+  static const char *units[] = {
+      "",
+      "",
+      " million",
+      " billion",
+      " trillion",
+      " quadrillion",
+      " quintillion",
+      " sextillion",
+      " septillion",
+      " octillion",
+      " nonillion",
+      " decillion",
+      " undecillion",
+      " duodecillion",
+      " tredecillion",
+      " quattuordecillion",
+      " quindecillion",
+      " sexdecillion",
+      " septendecillion",
+      " octodecillion",
+      " novemdecillion",
+      " vigintillion",
+  };
+  double v = value;
+  int i = 0;
+  while (v >= 1000.0 && i < (int)(sizeof(units) / sizeof(units[0])) - 1) {
+    v /= 1000.0;
+    i++;
+  }
+  if (i <= 1)
+    snprintf(buf, 32, "%.0f", value);
+  else if (v >= 1000.0 || i == (int)(sizeof(units) / sizeof(units[0])) - 1)
+    snprintf(buf, 32, "%g", value);
+  else if (v < 10.0)
+    snprintf(buf, 32, "%.2f%s", v, units[i]);
+  else if (v < 100.0)
+    snprintf(buf, 32, "%.1f%s", v, units[i]);
+  else
+    snprintf(buf, 32, "%.0f%s", v, units[i]);
+}
 
 void loadTextuesToVram(void) {
   if (cookie_texture.bmp_out && cookie_texture.width > 0 &&
@@ -133,6 +174,38 @@ void loadTextuesToVram(void) {
 
       grandma_store_texture_offset =
           tiny3d_TextureOffset(grandma_store_texture_rsx_mem);
+    }
+  }
+
+  if (farm_store_texture.bmp_out && farm_store_texture.width > 0 &&
+      farm_store_texture.height > 0) {
+    u32 farm_store_texture_size =
+        (farm_store_texture.pitch * farm_store_texture.height + 15) & ~15;
+    u32 *farm_store_texture_rsx_mem =
+        (u32 *)tiny3d_AllocTexture(farm_store_texture_size);
+
+    if (farm_store_texture_rsx_mem) {
+      memcpy(farm_store_texture_rsx_mem, farm_store_texture.bmp_out,
+             farm_store_texture.pitch * farm_store_texture.height);
+
+      farm_store_texture_offset =
+          tiny3d_TextureOffset(farm_store_texture_rsx_mem);
+    }
+  }
+
+  if (mine_store_texture.bmp_out && mine_store_texture.width > 0 &&
+      mine_store_texture.height > 0) {
+    u32 mine_store_texture_size =
+        (mine_store_texture.pitch * mine_store_texture.height + 15) & ~15;
+    u32 *mine_store_texture_rsx_mem =
+        (u32 *)tiny3d_AllocTexture(mine_store_texture_size);
+
+    if (mine_store_texture_rsx_mem) {
+      memcpy(mine_store_texture_rsx_mem, mine_store_texture.bmp_out,
+             mine_store_texture.pitch * mine_store_texture.height);
+
+      mine_store_texture_offset =
+          tiny3d_TextureOffset(mine_store_texture_rsx_mem);
     }
   }
 }
@@ -302,13 +375,15 @@ void drawCursorButton() {
 
   tiny3d_End();
 
-  if (cookies >= (long long)cursors_price) {
+  if (cookies >= cursors_price) {
     SetFontColor(0x34B233FF, 0x0);
   } else {
     SetFontColor(0xff0000ff, 0x0);
   }
-  DrawFormatString(price_icon_x + price_icon_width + 2.0f, 108.5f, "%lld",
-                   (long long)cursors_price);
+  char cursor_price_buf[32];
+  format_big(cursors_price, cursor_price_buf);
+  DrawFormatString(price_icon_x + price_icon_width + 2.0f, 108.5f, "%s",
+                   cursor_price_buf);
 
   SetFontColor(0x777777ff, 0x0);
   DrawFormatString(x + width - 30.0f, y + height - 20.0f, "%lld", cursors);
@@ -422,13 +497,15 @@ void drawGrandmaButton() {
 
   tiny3d_End();
 
-  if (cookies >= (long long)grandmas_price) {
+  if (cookies >= grandmas_price) {
     SetFontColor(0x34B233FF, 0x0);
   } else {
     SetFontColor(0xff0000ff, 0x0);
   }
-  DrawFormatString(price_icon_x + price_icon_width + 2.0f, 171.5f, "%lld",
-                   (long long)grandmas_price);
+  char grandma_price_buf[32];
+  format_big(grandmas_price, grandma_price_buf);
+  DrawFormatString(price_icon_x + price_icon_width + 2.0f, 171.5f, "%s",
+                   grandma_price_buf);
 
   SetFontColor(0x777777ff, 0x0);
   DrawFormatString(x + width - 30.0f, y + height - 20.0f, "%lld", grandmas);
@@ -443,6 +520,253 @@ void drawGrandmaButton() {
                     grandma_store_texture.width, grandma_store_texture.height,
                     grandma_store_texture.pitch, TINY3D_TEX_FORMAT_A8R8G8B8,
                     TEXTURE_LINEAR);
+
+  tiny3d_SetPolygon(TINY3D_QUADS);
+
+  tiny3d_VertexPos(icon_x, icon_y, 0);
+  tiny3d_VertexColor(color);
+  tiny3d_VertexTexture(0.0f, 0.0f);
+
+  tiny3d_VertexPos(icon_x + icon_width, icon_y, 0);
+  tiny3d_VertexColor(color);
+  tiny3d_VertexTexture(1.0f, 0.0f);
+
+  tiny3d_VertexPos(icon_x + icon_width, icon_y + icon_height, 0);
+  tiny3d_VertexColor(color);
+  tiny3d_VertexTexture(1.0f, 1.0f);
+
+  tiny3d_VertexPos(icon_x, icon_y + icon_height, 0);
+  tiny3d_VertexColor(color);
+  tiny3d_VertexTexture(0.0f, 1.0f);
+
+  tiny3d_End();
+}
+
+void drawFarmButton() {
+  u32 color;
+  if (store_select == 2) {
+    color = 0xffffffff;
+  } else {
+    color = 0x808080FF;
+  }
+
+  float x = 700.0f;
+  float y = 206.0f;
+
+  float width = (float)store_button_texture.width / 1.2;
+  float height = (float)store_button_texture.height / 1.2;
+
+  tiny3d_SetTexture(0, store_button_texture_offset, store_button_texture.width,
+                    store_button_texture.height, store_button_texture.pitch,
+                    TINY3D_TEX_FORMAT_A8R8G8B8, TEXTURE_LINEAR);
+
+  tiny3d_SetPolygon(TINY3D_QUADS);
+
+  tiny3d_VertexPos(x, y, 0);
+  tiny3d_VertexColor(color);
+  tiny3d_VertexTexture(0.0f, 0.0f);
+
+  tiny3d_VertexPos(x + width, y, 0);
+  tiny3d_VertexColor(color);
+  tiny3d_VertexTexture(1.0f, 0.0f);
+
+  tiny3d_VertexPos(x + width, y + height, 0);
+  tiny3d_VertexColor(color);
+  tiny3d_VertexTexture(1.0f, 1.0f);
+
+  tiny3d_VertexPos(x, y + height, 0);
+  tiny3d_VertexColor(color);
+  tiny3d_VertexTexture(0.0f, 1.0f);
+
+  tiny3d_End();
+  SetCurrentFont(0);
+  SetFontSize(24, 28);
+  if (store_select == 2) {
+    SetFontColor(0xffffffff, 0x0);
+  } else {
+    SetFontColor(0xff000000, 0x0);
+  }
+  DrawString(753.0f, 207.0f, "Farm");
+  SetFontColor(0x34B233FF, 0x0);
+  SetFontSize(12, 16);
+
+  float price_icon_x = 753.0f;
+  float price_icon_y = 238.0f;
+  float price_icon_width = (float)small_cookie_texture.width / 22.0f;
+  float price_icon_height = (float)small_cookie_texture.height / 22.0f;
+
+  tiny3d_SetTexture(0, small_cookie_texture_offset, small_cookie_texture.width,
+                    small_cookie_texture.height, small_cookie_texture.pitch,
+                    TINY3D_TEX_FORMAT_A8R8G8B8, TEXTURE_LINEAR);
+
+  tiny3d_SetPolygon(TINY3D_QUADS);
+
+  tiny3d_VertexPos(price_icon_x, price_icon_y, 0);
+  tiny3d_VertexColor(color);
+  tiny3d_VertexTexture(0.0f, 0.0f);
+
+  tiny3d_VertexPos(price_icon_x + price_icon_width, price_icon_y, 0);
+  tiny3d_VertexColor(color);
+  tiny3d_VertexTexture(1.0f, 0.0f);
+
+  tiny3d_VertexPos(price_icon_x + price_icon_width,
+                   price_icon_y + price_icon_height, 0);
+  tiny3d_VertexColor(color);
+  tiny3d_VertexTexture(1.0f, 1.0f);
+
+  tiny3d_VertexPos(price_icon_x, price_icon_y + price_icon_height, 0);
+  tiny3d_VertexColor(color);
+  tiny3d_VertexTexture(0.0f, 1.0f);
+
+  tiny3d_End();
+
+  if (cookies >= farms_price) {
+    SetFontColor(0x34B233FF, 0x0);
+  } else {
+    SetFontColor(0xff0000ff, 0x0);
+  }
+  char farm_price_buf[32];
+  format_big(farms_price, farm_price_buf);
+  DrawFormatString(price_icon_x + price_icon_width + 2.0f, 234.5f, "%s",
+                   farm_price_buf);
+
+  SetFontColor(0x777777ff, 0x0);
+  DrawFormatString(x + width - 30.0f, y + height - 20.0f, "%lld", farms);
+
+  float icon_x = 700.0f;
+  float icon_y = 204.0f;
+
+  float icon_width = (float)farm_store_texture.width / 1.1;
+  float icon_height = (float)farm_store_texture.height / 1.1;
+
+  tiny3d_SetTexture(0, farm_store_texture_offset, farm_store_texture.width,
+                    farm_store_texture.height, farm_store_texture.pitch,
+                    TINY3D_TEX_FORMAT_A8R8G8B8, TEXTURE_LINEAR);
+
+  tiny3d_SetPolygon(TINY3D_QUADS);
+
+  tiny3d_VertexPos(icon_x, icon_y, 0);
+  tiny3d_VertexColor(color);
+  tiny3d_VertexTexture(0.0f, 0.0f);
+
+  tiny3d_VertexPos(icon_x + icon_width, icon_y, 0);
+  tiny3d_VertexColor(color);
+  tiny3d_VertexTexture(1.0f, 0.0f);
+
+  tiny3d_VertexPos(icon_x + icon_width, icon_y + icon_height, 0);
+  tiny3d_VertexColor(color);
+  tiny3d_VertexTexture(1.0f, 1.0f);
+
+  tiny3d_VertexPos(icon_x, icon_y + icon_height, 0);
+  tiny3d_VertexColor(color);
+  tiny3d_VertexTexture(0.0f, 1.0f);
+
+  tiny3d_End();
+}
+
+void drawMineButton() {
+  u32 color;
+  if (store_select == 3) {
+    color = 0xffffffff;
+  } else {
+    color = 0x808080FF;
+  }
+
+  float x = 700.0f;
+  float y = 269.0f;
+
+  float width = (float)store_button_texture.width / 1.2;
+  float height = (float)store_button_texture.height / 1.2;
+
+  tiny3d_SetTexture(0, store_button_texture_offset, store_button_texture.width,
+                    store_button_texture.height, store_button_texture.pitch,
+                    TINY3D_TEX_FORMAT_A8R8G8B8, TEXTURE_LINEAR);
+
+  tiny3d_SetPolygon(TINY3D_QUADS);
+
+  tiny3d_VertexPos(x, y, 0);
+  tiny3d_VertexColor(color);
+  tiny3d_VertexTexture(0.0f, 0.0f);
+
+  tiny3d_VertexPos(x + width, y, 0);
+  tiny3d_VertexColor(color);
+  tiny3d_VertexTexture(1.0f, 0.0f);
+
+  tiny3d_VertexPos(x + width, y + height, 0);
+  tiny3d_VertexColor(color);
+  tiny3d_VertexTexture(1.0f, 1.0f);
+
+  tiny3d_VertexPos(x, y + height, 0);
+  tiny3d_VertexColor(color);
+  tiny3d_VertexTexture(0.0f, 1.0f);
+
+  tiny3d_End();
+  SetCurrentFont(0);
+  SetFontSize(24, 28);
+  if (store_select == 3) {
+    SetFontColor(0xffffffff, 0x0);
+  } else {
+    SetFontColor(0xff000000, 0x0);
+  }
+  DrawString(753.0f, 270.0f, "Mine");
+  SetFontColor(0x34B233FF, 0x0);
+  SetFontSize(12, 16);
+
+  float price_icon_x = 753.0f;
+  float price_icon_y = 301.0f;
+  float price_icon_width = (float)small_cookie_texture.width / 22.0f;
+  float price_icon_height = (float)small_cookie_texture.height / 22.0f;
+
+  tiny3d_SetTexture(0, small_cookie_texture_offset, small_cookie_texture.width,
+                    small_cookie_texture.height, small_cookie_texture.pitch,
+                    TINY3D_TEX_FORMAT_A8R8G8B8, TEXTURE_LINEAR);
+
+  tiny3d_SetPolygon(TINY3D_QUADS);
+
+  tiny3d_VertexPos(price_icon_x, price_icon_y, 0);
+  tiny3d_VertexColor(color);
+  tiny3d_VertexTexture(0.0f, 0.0f);
+
+  tiny3d_VertexPos(price_icon_x + price_icon_width, price_icon_y, 0);
+  tiny3d_VertexColor(color);
+  tiny3d_VertexTexture(1.0f, 0.0f);
+
+  tiny3d_VertexPos(price_icon_x + price_icon_width,
+                   price_icon_y + price_icon_height, 0);
+  tiny3d_VertexColor(color);
+  tiny3d_VertexTexture(1.0f, 1.0f);
+
+  tiny3d_VertexPos(price_icon_x, price_icon_y + price_icon_height, 0);
+  tiny3d_VertexColor(color);
+  tiny3d_VertexTexture(0.0f, 1.0f);
+
+  tiny3d_End();
+
+  if (cookies >= mines_price) {
+    SetFontColor(0x34B233FF, 0x0);
+  } else {
+    SetFontColor(0xff0000ff, 0x0);
+  }
+  char mine_price_buf[32];
+  format_big(mines_price, mine_price_buf);
+  DrawFormatString(price_icon_x + price_icon_width + 2.0f, 297.5f, "%s",
+                   mine_price_buf);
+
+  SetFontColor(0x777777ff, 0x0);
+  DrawFormatString(x + width - 30.0f, y + height - 20.0f, "%lld", mines);
+
+  float icon_x = 700.0f;
+  float icon_y =
+      267.0f; // SIX
+              // SEVEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEN
+              // HOLY NUMBER
+
+  float icon_width = (float)mine_store_texture.width / 1.1;
+  float icon_height = (float)mine_store_texture.height / 1.1;
+
+  tiny3d_SetTexture(0, mine_store_texture_offset, mine_store_texture.width,
+                    mine_store_texture.height, mine_store_texture.pitch,
+                    TINY3D_TEX_FORMAT_A8R8G8B8, TEXTURE_LINEAR);
 
   tiny3d_SetPolygon(TINY3D_QUADS);
 
@@ -540,7 +864,11 @@ void drawBakeryName(void) {
   SetFontSize(28, 42);
   SetFontColor(0xffffffff, 0x0);
   SetFontAutoCenter(1);
-  DrawFormatString(70.0f, text_y, "%s", osk_input_text_utf8);
+  if (save_game_show) {
+    DrawString(70.0f, text_y, "Game Saved");
+  } else {
+    DrawFormatString(70.0f, text_y, "%s", osk_input_text_utf8);
+  }
   SetFontAutoCenter(0);
 }
 
@@ -548,7 +876,9 @@ void drawValue(void) {
   SetCurrentFont(0);
   SetFontSize(18, 32);
   SetFontColor(0xffffffff, 0x0);
-  DrawFormatString(70.0f, 100.0f, "cookies: %lld", cookies);
+  char cookies_buf[32];
+  format_big(cookies, cookies_buf);
+  DrawFormatString(70.0f, 100.0f, "cookies: %s", cookies_buf);
   SetFontSize(10, 24);
   DrawFormatString(65.0f, 135.0f, "cookies per second: %.1f",
                    cookies_per_second);
@@ -635,21 +965,29 @@ int main(void) {
 
   loadTextuesToVram();
   loadFonts();
+  load_game(&cookies, &cursors, &grandmas, &farms, &mines);
 
   padInfo padinfo;
   padData paddata;
   int frame = 0;
 
+  cursors_price = cursors_base_price * powf(1.15f, (float)cursors);
+  grandmas_price = grandmas_base_price * powf(1.15f, (float)grandmas);
+  farms_price = farms_base_price * powf(1.15f, (float)farms);
+  mines_price = mines_base_price * powf(1.15f, (float)mines);
+
   while (1) {
     if ((frame++ % 60) == 0)
       printf("frame %d\n", frame);
 
-    cookies_per_second = (double)cursors * 0.1 + (double)grandmas * 1.0;
+    cookies_per_second = (double)cursors * 0.1 + (double)grandmas * 1.0 +
+                         (double)farms * 4.0 + (double)mines * 47;
     static double cookies_fraction = 0.0;
     cookies_fraction += cookies_per_second / 60.0;
     if (cookies_fraction >= 1.0) {
-      cookies += (long long)cookies_fraction;
-      cookies_fraction -= (long long)cookies_fraction;
+      double whole = (double)(long long)cookies_fraction;
+      cookies += whole;
+      cookies_fraction -= whole;
     }
 
     if (cookie_width > 2.5f && cookie_height > 2.5f) {
@@ -678,13 +1016,23 @@ int main(void) {
     drawBakeryName();
     drawCursorButton();
     drawGrandmaButton();
+    drawFarmButton();
+    drawMineButton();
     drawFloatCookies();
+
+    if (save_game_show_frames > 0) {
+      save_game_show_frames--;
+      if (save_game_show_frames == 0) {
+        save_game_show = 0;
+      }
+    }
 
     ioPadGetInfo(&padinfo);
     static u16 prev_cross = 0;
     static u16 prev_square = 0;
     static u16 prev_down = 0;
     static u16 prev_up = 0;
+    static u16 prev_r3 = 0;
     for (int i = 0; i < MAX_PADS; i++) {
       if (padinfo.status[i]) {
         ioPadGetData(i, &paddata);
@@ -727,10 +1075,10 @@ int main(void) {
           prev_cross = cur_cross;
           u16 cur_square = paddata.BTN_SQUARE != 0;
           if (cur_square && !prev_square) {
-            switch (store_select) { // needs a sounds
+            switch (store_select) {
             case 0: {
-              if (cookies >= (long long)cursors_price) {
-                cookies -= (long long)cursors_price;
+              if (cookies >= cursors_price) {
+                cookies -= cursors_price;
                 cursors++;
                 cursors_price =
                     cursors_base_price * powf(1.15f, (float)cursors);
@@ -750,13 +1098,60 @@ int main(void) {
                   break;
                 }
               }
+              break;
 
             case 1: {
-              if (cookies >= (long long)grandmas_price) {
-                cookies -= (long long)grandmas_price;
+              if (cookies >= grandmas_price) {
+                cookies -= grandmas_price;
                 grandmas++;
                 grandmas_price =
                     grandmas_base_price * powf(1.15f, (float)grandmas);
+
+                switch (rand() % 4 + 1) {
+                case 1:
+                  playSound(audio_buy1_bin, audio_buy1_bin_size);
+                  break;
+                case 2:
+                  playSound(audio_buy2_bin, audio_buy2_bin_size);
+                  break;
+                case 3:
+                  playSound(audio_buy3_bin, audio_buy3_bin_size);
+                  break;
+                case 4:
+                  playSound(audio_buy4_bin, audio_buy4_bin_size);
+                  break;
+                }
+              }
+            } break;
+
+            case 2: {
+              if (cookies >= farms_price) {
+                cookies -= farms_price;
+                farms++;
+                farms_price = farms_base_price * powf(1.15f, (float)farms);
+
+                switch (rand() % 4 + 1) {
+                case 1:
+                  playSound(audio_buy1_bin, audio_buy1_bin_size);
+                  break;
+                case 2:
+                  playSound(audio_buy2_bin, audio_buy2_bin_size);
+                  break;
+                case 3:
+                  playSound(audio_buy3_bin, audio_buy3_bin_size);
+                  break;
+                case 4:
+                  playSound(audio_buy4_bin, audio_buy4_bin_size);
+                  break;
+                }
+              }
+            } break;
+
+            case 3: {
+              if (cookies >= mines_price) {
+                cookies -= mines_price;
+                mines++;
+                mines_price = mines_base_price * powf(1.15f, (float)mines);
 
                 switch (rand() % 4 + 1) {
                 case 1:
@@ -794,6 +1189,13 @@ int main(void) {
             }
           }
           prev_up = cur_up;
+          u16 cur_r3 = paddata.BTN_R3 != 0;
+          if (cur_r3 && !prev_r3) {
+            save_game(cookies, cursors, grandmas, farms, mines);
+            save_game_show = 1;
+            save_game_show_frames = 120;
+          }
+          prev_r3 = cur_r3;
         }
       }
     }

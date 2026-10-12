@@ -14,6 +14,10 @@ extern pngData cursor_store_texture;
 extern u32 cursor_store_texture_offset;
 extern pngData grandma_store_texture;
 extern u32 grandma_store_texture_offset;
+extern pngData farm_store_texture;
+extern u32 farm_store_texture_offset;
+extern pngData mine_store_texture;
+extern u32 mine_store_texture_offset;
 extern pngData gray_texture;
 extern u32 gray_texture_offset;
 
